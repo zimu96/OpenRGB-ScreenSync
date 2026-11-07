@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- wlr-output-power-management-unstable-v1 (sway, Hyprland, river, labwc...), riscritto a mano -->
+<protocol name="wlr_output_power_management_unstable_v1">
+  <interface name="zwlr_output_power_manager_v1" version="1">
+    <request name="get_output_power">
+      <arg name="id" type="new_id" interface="zwlr_output_power_v1"/>
+      <arg name="output" type="object" interface="wl_output"/>
+    </request>
+    <request name="destroy" type="destructor"/>
+  </interface>
+  <interface name="zwlr_output_power_v1" version="1">
+    <enum name="mode"><entry name="off" value="0"/><entry name="on" value="1"/></enum>
+    <enum name="error"><entry name="invalid_mode" value="1"/></enum>
+    <request name="set_mode"><arg name="mode" type="uint" enum="mode"/></request>
+    <request name="destroy" type="destructor"/>
+    <event name="mode"><arg name="mode" type="uint" enum="mode"/></event>
+    <event name="failed"/>
+  </interface>
+</protocol>

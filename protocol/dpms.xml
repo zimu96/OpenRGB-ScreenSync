@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Protocollo KDE DPMS (org_kde_kwin_dpms), riscritto a mano: serve solo per ascoltare lo stato dei monitor. -->
+<protocol name="dpms">
+  <interface name="org_kde_kwin_dpms_manager" version="1">
+    <request name="get">
+      <arg name="id" type="new_id" interface="org_kde_kwin_dpms"/>
+      <arg name="output" type="object" interface="wl_output"/>
+    </request>
+  </interface>
+  <interface name="org_kde_kwin_dpms" version="1">
+    <request name="set">
+      <arg name="mode" type="uint"/>
+    </request>
+    <request name="release" type="destructor"/>
+    <event name="supported">
+      <arg name="supported" type="uint"/>
+    </event>
+    <event name="mode">
+      <arg name="mode" type="uint"/>
+    </event>
+    <event name="done"/>
+  </interface>
+</protocol>
