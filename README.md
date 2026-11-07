@@ -39,7 +39,7 @@ Non l'ho trovato già fatto: esistono solo script esterni che richiamano `openrg
 2. Modo con luminosita': scala la luminosita' (gli effetti hardware restano intatti). Se la luminosita' minima non e' zero, alla fine passa a un modo Direct nero.
 3. Modo senza nessuna delle due: al termine passa a un modo Direct nero (se esiste) e al ritorno ripristina il modo.
 
-Dispositivi con colori "vuoti": se OpenRGB conosce per un dispositivo solo colori tutti neri (ad esempio perche' il profilo e' stato caricato prima che il dispositivo fosse registrato), il plugin lo salta, perche' non sa com'e' acceso davvero. Carica di nuovo il profilo dalla scheda Profili di OpenRGB e il dispositivo torna a sfumare.
+Dispositivi con colori "vuoti": se OpenRGB conosce per un dispositivo solo colori tutti neri (ad esempio perche' il profilo e' stato caricato prima che il dispositivo fosse registrato), il plugin lo salta, perche' non sa com'e' acceso davvero. Succede di solito con dispositivi registrati da altri plugin dopo che OpenRGB ha gia' caricato il profilo di apertura; la correzione spetta al plugin di quel dispositivo (riapplicare il profilo dopo la registrazione). Nel frattempo, carica di nuovo il profilo dalla scheda Profili di OpenRGB e il dispositivo torna a sfumare.
 
 Limite noto: se un altro plugin/effetto (es. HardwareSync) scrive i colori nello stesso momento, il fade puo' litigare con esso.
 
