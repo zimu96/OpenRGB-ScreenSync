@@ -35,7 +35,7 @@ Non l'ho trovato già fatto: esistono solo script esterni che richiamano `openrg
 2. Modo con luminosita': scala la luminosita' (gli effetti hardware restano intatti). Se la luminosita' minima non e' zero, alla fine passa a un modo Direct nero.
 3. Modo senza nessuna delle due: al termine passa a un modo Direct nero (se esiste) e al ritorno ripristina il modo.
 
-Dispositivi con colori "vuoti": se OpenRGB conosce per un dispositivo solo colori tutti neri (ad esempio perche' il profilo e' stato caricato prima che il dispositivo fosse registrato), il plugin lo salta, perche' non sa com'e' acceso davvero. Il plugin Akko ([Akko-3108-v2-OpenRGB-Plugin](https://github.com/zimu96/Akko-3108-v2-OpenRGB-Plugin)) dalla versione dopo il 7/11/2026 riapplica da solo il profilo di apertura per evitarlo.
+Dispositivi con colori "vuoti": se OpenRGB conosce per un dispositivo solo colori tutti neri (ad esempio perche' il profilo e' stato caricato prima che il dispositivo fosse registrato), il plugin lo salta, perche' non sa com'e' acceso davvero. Il plugin Akko ([Akko-3108-v2-OpenRGB-Plugin](https://github.com/zimu96/Akko-3108-v2-OpenRGB-Plugin)) dalla versione 1.1.1 riapplica da solo il profilo di apertura per evitarlo.
 
 Limite noto: se un altro plugin/effetto (es. HardwareSync) scrive i colori nello stesso momento, il fade puo' litigare con esso.
 

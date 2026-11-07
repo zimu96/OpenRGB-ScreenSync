@@ -9,7 +9,7 @@ OpenRGBPluginInfo ScreenSyncPlugin::GetPluginInfo()
     OpenRGBPluginInfo i;
     i.Name        = "Screen Sync";
     i.Description = "Spegne (con dissolvenza) i LED di tutti i dispositivi OpenRGB quando il sistema spegne lo schermo, e li riaccende quando lo schermo si riaccende.";
-    i.Version     = "1.1.0";
+    i.Version     = "1.0.0";
     i.Commit      = "";
     i.URL         = "";
     i.Location    = OPENRGB_PLUGIN_LOCATION_TOP;
