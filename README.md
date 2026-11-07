@@ -1,7 +1,11 @@
 # OpenRGB Screen Sync
 
 Plugin per OpenRGB 1.1 (API plugin v5, Qt6) che **spegne i LED quando il sistema operativo spegne lo schermo** e li riaccende quando lo schermo si riaccende.
-Vale per **tutti** i dispositivi OpenRGB (tastiera, mouse, ventole, ...), non solo per la Akko. E' un plugin separato da `Akko-OpenRGB-Plugin`.
+Vale per **tutti** i dispositivi OpenRGB (tastiera, mouse, ventole, scheda madre, ...).
+
+> **Funziona solo su Linux** (x86_64). Non esiste una versione per Windows o macOS.
+>
+> **Testato su:** CachyOS (base Arch Linux), KDE Plasma su Wayland, OpenRGB 1.1. Non l'ho provato su altre distro o altri desktop.
 
 Non l'ho trovato già fatto: esistono solo script esterni che richiamano `openrgb` a riga di comando (lenti, ~3 s a ogni chiamata).
 
@@ -35,7 +39,7 @@ Non l'ho trovato già fatto: esistono solo script esterni che richiamano `openrg
 2. Modo con luminosita': scala la luminosita' (gli effetti hardware restano intatti). Se la luminosita' minima non e' zero, alla fine passa a un modo Direct nero.
 3. Modo senza nessuna delle due: al termine passa a un modo Direct nero (se esiste) e al ritorno ripristina il modo.
 
-Dispositivi con colori "vuoti": se OpenRGB conosce per un dispositivo solo colori tutti neri (ad esempio perche' il profilo e' stato caricato prima che il dispositivo fosse registrato), il plugin lo salta, perche' non sa com'e' acceso davvero. Il plugin Akko ([Akko-3108-v2-OpenRGB-Plugin](https://github.com/zimu96/Akko-3108-v2-OpenRGB-Plugin)) dalla versione 1.1.1 riapplica da solo il profilo di apertura per evitarlo.
+Dispositivi con colori "vuoti": se OpenRGB conosce per un dispositivo solo colori tutti neri (ad esempio perche' il profilo e' stato caricato prima che il dispositivo fosse registrato), il plugin lo salta, perche' non sa com'e' acceso davvero. Carica di nuovo il profilo dalla scheda Profili di OpenRGB e il dispositivo torna a sfumare.
 
 Limite noto: se un altro plugin/effetto (es. HardwareSync) scrive i colori nello stesso momento, il fade puo' litigare con esso.
 
@@ -55,7 +59,7 @@ Richiede: cmake, qt6-base (con DBus), wayland, libx11 + libxext (opzionali, per 
 - `protocol/*.xml` protocolli Wayland KDE DPMS e wlr-output-power (riscritti a mano)
 - `packaging/` installer e istruzioni inclusi negli ZIP delle release
 - `.github/workflows/release-builds.yml` build automatica (Linux) e pubblicazione della release al push di un tag `v*`
-- `sdk/` header SDK plugin OpenRGB (copiati dal plugin Akko)
+- `sdk/` header SDK plugin OpenRGB (copiati dai sorgenti di OpenRGB)
 
 ## Licenza
 GPL-2.0-or-later (come OpenRGB, da cui provengono gli header in `sdk/`).

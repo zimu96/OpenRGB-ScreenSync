@@ -1,7 +1,12 @@
 ====================================================================
  Screen Sync - plugin OpenRGB che spegne i LED con lo schermo
- Linux x86_64 (Qt6)
+ SOLO LINUX (x86_64, Qt6)
 ====================================================================
+
+TESTATO SU
+----------
+  CachyOS (base Arch Linux), KDE Plasma su Wayland, OpenRGB 1.1.
+  Altre distro e altri desktop: non provati.
 
 COSA FA
 -------
@@ -49,8 +54,7 @@ PORTABILITA' TRA DISTRIBUZIONI
 
 NOTE
 ----
-  - Non esiste una versione Windows: usa un metodo diverso per
-    sapere quando lo schermo si spegne e non e' stata scritta.
+  - Funziona solo su Linux: non esistono versioni per Windows o macOS.
   - Se per un dispositivo OpenRGB conosce solo colori tutti neri
     (profilo caricato prima della registrazione del dispositivo), il
     plugin lo salta per non lasciarlo spento.
