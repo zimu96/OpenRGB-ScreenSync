@@ -1,0 +1,96 @@
+#============================================================================#
+# OpenRGB-ScreenSync - build di rilascio                                     #
+#                                                                            #
+#   - linux = ubuntu-22.04 (glibc 2.35) -> .so portabile su tutte le distro  #
+#     con glibc >= 2.35. Nessun binario viene creato sul PC dello sviluppatore#
+#   - Windows: non supportato (nessun backend per lo stato dello schermo).   #
+#                                                                            #
+# Trigger: push di un tag "v*" -> crea anche la GitHub Release con gli ZIP.  #
+#          Avvio manuale dal tab Actions (senza release).                    #
+#============================================================================#
+name: Release builds
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Linux x86_64 (.so, Qt6)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installa dipendenze
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            qt6-base-dev libgl1-mesa-dev libxkbcommon-dev libwayland-dev libwayland-bin \
+            libx11-dev libxext-dev pkg-config cmake g++ make
+
+      - name: Configura (Qt6)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Impacchetta
+        run: |
+          D=dist/OpenRGB-ScreenSync-linux-x86_64
+          mkdir -p $D
+          cp build/libScreenSyncPlugin.so $D/
+          cp packaging/install-linux.sh $D/install.sh
+          cp packaging/INSTALL-LINUX.txt $D/
+          cp LICENSE $D/
+          chmod +x $D/install.sh
+          ls -la $D
+
+      - name: Upload artefatto
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenRGB-ScreenSync-linux-x86_64
+          path: dist/OpenRGB-ScreenSync-linux-x86_64
+          if-no-files-found: error
+
+  release:
+    name: Pubblica GitHub Release
+    needs: [linux]
+    if: ${{ !cancelled() && needs.linux.result == 'success' && startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Scarica artefatti
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Crea gli ZIP
+        run: |
+          cd artifacts
+          for d in */; do
+            n="${d%/}"
+            zip -r "${n/OpenRGB-ScreenSync-/OpenRGB-ScreenSync-${GITHUB_REF_NAME}-}.zip" "$d"
+          done
+          ls -la *.zip
+
+      - name: Pubblica la Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Screen Sync ${{ github.ref_name }}"
+          files: artifacts/*.zip
+          body: |
+            Scarica lo ZIP qui sotto, in **Assets**. "Source code (zip / tar.gz)" lo aggiunge GitHub in automatico: serve solo per compilare da te.
+            Download the ZIP from **Assets** below; "Source code" is added by GitHub and is only for building yourself.
+
+            ## ${{ github.ref_name }}
+            - Spegne con dissolvenza i LED di tutti i dispositivi OpenRGB quando lo schermo va in standby e li ripristina alla riaccensione.
+            - Scheda "Schermo" in OpenRGB: dissolvenza o di colpo, durata, dispositivi, pulsante Prova.
+            - Desktop: KDE Plasma Wayland (provato), sway/Hyprland (wlroots), GNOME, X11 (i3, XFCE...) (non provati).
+            - Per OpenRGB 1.1 (Plugin API v5, Qt6). Linux: estrai lo ZIP, `bash install.sh`, riavvia OpenRGB e attiva il plugin in Impostazioni -> Plugin.
+
+            Fatto da zimu96 insieme a Claude (Anthropic) come assistente IA.

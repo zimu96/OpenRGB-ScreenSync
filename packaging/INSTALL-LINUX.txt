@@ -1,0 +1,56 @@
+====================================================================
+ Screen Sync - plugin OpenRGB che spegne i LED con lo schermo
+ Linux x86_64 (Qt6)
+====================================================================
+
+COSA FA
+-------
+  Quando il sistema spegne lo schermo (standby) i LED di tutti i
+  dispositivi OpenRGB sfumano fino a spegnersi; quando lo schermo si
+  riaccende tornano com'erano. Dissolvenza o "di colpo", durata e
+  dispositivi si scelgono nella scheda "Schermo".
+
+CONTENUTO
+---------
+  libScreenSyncPlugin.so   Plugin OpenRGB (Plugin API v5, Qt6, x86_64)
+  install.sh               Script di installazione
+  LICENSE                  GPL-2.0-or-later
+
+REQUISITI
+---------
+  - OpenRGB 1.1 compilato con Qt6 (Plugin API v5).
+  - Qt6 con modulo DBus e libwayland-client (gia' presenti con OpenRGB
+    su quasi tutte le distro).
+  - Un desktop supportato:
+      KDE Plasma (Wayland)           protocollo KDE DPMS   (provato)
+      sway / Hyprland / wlroots      wlr-output-power      (non provato)
+      GNOME (Wayland e X11)          D-Bus Mutter          (non provato)
+      i3, XFCE, KDE X11 ... (X11)    estensione DPMS       (non provato)
+
+INSTALLAZIONE
+-------------
+  Estrarre lo ZIP e lanciare:
+      bash install.sh
+  (oppure copiare libScreenSyncPlugin.so in ~/.config/OpenRGB/plugins/)
+
+POI
+---
+  1. Chiudi e riavvia OpenRGB:  openrgb --startminimized
+  2. Impostazioni -> Plugin -> spunta "Attivato" su Screen Sync
+  3. Scheda "Schermo": scelta della dissolvenza e dei dispositivi.
+     Il pulsante "Prova" spegne e riaccende i LED senza toccare lo schermo.
+
+PORTABILITA' TRA DISTRIBUZIONI
+------------------------------
+  Questo .so e' compilato su Ubuntu 22.04 (glibc 2.35): funziona su
+  distribuzioni con glibc >= 2.35 (Ubuntu 22.04+, Debian 12+,
+  Fedora 36+, Arch/CachyOS ...). Su distro piu' vecchie compila dai
+  sorgenti (vedi il repository GitHub).
+
+NOTE
+----
+  - Non esiste una versione Windows: usa un metodo diverso per
+    sapere quando lo schermo si spegne e non e' stata scritta.
+  - Se per un dispositivo OpenRGB conosce solo colori tutti neri
+    (profilo caricato prima della registrazione del dispositivo), il
+    plugin lo salta per non lasciarlo spento.

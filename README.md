@@ -43,7 +43,7 @@ Limite noto: se un altro plugin/effetto (es. HardwareSync) scrive i colori nello
 ```
 ./installa.sh
 ```
-Il file compilato si trova in `release/libScreenSyncPlugin.so` (copia per GitHub/backup) e in `~/.config/OpenRGB/plugins/` (quella che OpenRGB carica).
+Pacchetto pronto: scarica lo ZIP dalla pagina [Releases](https://github.com/zimu96/OpenRGB-ScreenSync/releases), estrailo e lancia `bash install.sh` (compilato su Ubuntu 22.04, gira su tutte le distro con glibc >= 2.35). Compilando da sorgenti, il risultato finisce in `~/.config/OpenRGB/plugins/` (quella che OpenRGB carica).
 
 Richiede: cmake, qt6-base (con DBus), wayland, libx11 + libxext (opzionali, per X11), OpenRGB 1.1 (Qt6). Riavvia OpenRGB dopo l'installazione.
 
@@ -53,7 +53,8 @@ Richiede: cmake, qt6-base (con DBus), wayland, libx11 + libxext (opzionali, per 
 - `src/SettingsWidget.*` scheda in OpenRGB
 - `src/ScreenSyncPlugin.*` entry point del plugin
 - `protocol/*.xml` protocolli Wayland KDE DPMS e wlr-output-power (riscritti a mano)
-- `release/libScreenSyncPlugin.so` plugin gia' compilato (Linux x86_64, Qt6)
+- `packaging/` installer e istruzioni inclusi negli ZIP delle release
+- `.github/workflows/release-builds.yml` build automatica (Linux) e pubblicazione della release al push di un tag `v*`
 - `sdk/` header SDK plugin OpenRGB (copiati dal plugin Akko)
 
 ## Licenza
