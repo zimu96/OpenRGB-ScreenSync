@@ -11,6 +11,7 @@ public:
     SettingsWidget(OpenRGBPluginAPIInterface* api, FadeEngine* engine, QWidget* parent = nullptr);
 public slots:
     void setStatus(const QString& s);
+    void refreshDevicesAuto();      // chiamata quando cambia l'elenco dei dispositivi
 signals:
     void settingsChanged(const ScreenSyncSettings& s);
 private:
@@ -21,6 +22,8 @@ private:
     FadeEngine*     engine;
     bool            loading = true;
     QCheckBox*      chkEnabled;
+    QCheckBox*      chkShutdown;
+    QPushButton*    btnRescan;
     QComboBox       *cmbOut, *cmbIn;
     QDoubleSpinBox  *spnOut, *spnIn;
     QRadioButton    *rbAll, *rbSel;

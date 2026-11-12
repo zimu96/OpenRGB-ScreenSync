@@ -36,7 +36,7 @@ bool FadeEngine::stillExists(RGBControllerInterface* c) const
 void FadeEngine::setScreenOn(bool on)
 {
     SLOG("[ScreenSync] evento schermo: %s (plugin %s)", on ? "ACCESO" : "SPENTO", cfg.enabled ? "attivo" : "disattivato");
-    if(!cfg.enabled) return;
+    if(!cfg.enabled || shuttingDown) return;
     if(!on && !snap) takeSnapshot();
     if(!snap) return;                       // schermo acceso e niente da ripristinare
     target = on ? 1.0 : 0.0;
@@ -205,6 +205,30 @@ void FadeEngine::restoreExact()
 
 void FadeEngine::restoreNow()
 {
+    if(shuttingDown) return;        // durante lo spegnimento del PC i LED devono restare spenti
     timer.stop();
     if(snap) { level = 1.0; target = 1.0; restoreExact(); }
+}
+
+void FadeEngine::shutdownOff()
+{
+    if(!cfg.offOnShutdown || shuttingDown) return;
+    SLOG("[ScreenSync] spegnimento del PC: LED spenti subito");
+    shuttingDown = true;
+    timer.stop();
+    if(!snap) takeSnapshot();
+    if(!snap) return;
+    level = target = 0.0;
+    for(Dev& d : devs) d.lastMs = -100000;
+    apply(0.0);
+    finalizeOff();
+    // secondo invio: se un comando si perde, i LED si spengono lo stesso
+    QTimer::singleShot(250, this, [this]{ if(snap) { for(Dev& d : devs) d.lastMs = -100000; apply(0.0); } });
+}
+
+void FadeEngine::cancelShutdown()
+{
+    if(!shuttingDown) return;
+    shuttingDown = false;
+    if(snap) { timer.stop(); level = 1.0; target = 1.0; restoreExact(); }
 }

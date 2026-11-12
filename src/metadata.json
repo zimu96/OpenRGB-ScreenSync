@@ -3,7 +3,7 @@
     "OpenRGBPluginAPIVersion": 5,
     "Id": "OpenRGB-ScreenSyncPlugin",
     "Name": "Screen Sync (LED con lo schermo)",
-    "VersionStr": "1.0.0",
+    "VersionStr": "1.0.1",
     "Url": "",
     "Commit": ""
 }

@@ -3,7 +3,8 @@
 #include "OpenRGBPluginInterface.h"
 #include "FadeEngine.h"
 
-class DpmsWatcher; class SettingsWidget;
+#include <QPointer>
+class DpmsWatcher; class SettingsWidget; class ShutdownWatcher;
 
 class ScreenSyncPlugin : public QObject, public OpenRGBPluginInterface
 {
@@ -25,7 +26,7 @@ public:
     nlohmann::json      OnProfileSave() override { return nlohmann::json(); }
     unsigned char*      OnSDKCommand(unsigned int, unsigned char*, unsigned int*) override { return nullptr; }
     void                ProfileManagerUpdated(unsigned int) override {}
-    void                ResourceManagerUpdated(unsigned int) override {}
+    void                ResourceManagerUpdated(unsigned int) override;
     void                SettingsManagerUpdated(unsigned int) override {}
 
 private:
@@ -35,6 +36,7 @@ private:
     OpenRGBPluginAPIInterface* api = nullptr;
     FadeEngine*                engine = nullptr;
     DpmsWatcher*               watcher = nullptr;
-    SettingsWidget*            widget = nullptr;
+    ShutdownWatcher*           shutdown = nullptr;
+    QPointer<SettingsWidget>   widget;
     QString                    lastStatus = "in avvio";
 };

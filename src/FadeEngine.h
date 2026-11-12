@@ -12,6 +12,7 @@ struct ScreenSyncSettings
     bool        enabled   = true;
     int         fadeOutMs = 2000;   // 0 = di colpo
     int         fadeInMs  = 1000;   // 0 = di colpo
+    bool        offOnShutdown = false;   // spegni subito i LED quando il PC si spegne (non al riavvio)
     bool        allDevices = true;
     QStringList selected;           // chiavi "nome|posizione"
 };
@@ -29,6 +30,8 @@ public slots:
     void setScreenOn(bool on);
     void testCycle();        // spegne e riaccende (prova)
     void restoreNow();       // ripristina subito tutto (chiusura plugin)
+    void shutdownOff();      // il PC si spegne: LED spenti di colpo e niente ripristino
+    void cancelShutdown();   // spegnimento annullato: ripristina
 
 private:
     struct Dev
@@ -61,5 +64,6 @@ private:
     QTimer             timer;
     QElapsedTimer      clock;
     bool               offApplied = false;
+    bool               shuttingDown = false;
     QElapsedTimer      total;
 };

@@ -44,7 +44,7 @@ jobs:
         run: |
           D=dist/OpenRGB-ScreenSync-linux-x86_64
           mkdir -p $D
-          cp build/libScreenSyncPlugin.so $D/
+          cp libScreenSyncPlugin.so $D/
           cp packaging/install-linux.sh $D/install.sh
           cp packaging/INSTALL-LINUX.txt $D/
           cp LICENSE $D/
@@ -89,6 +89,7 @@ jobs:
 
             ## ${{ github.ref_name }}
             - Spegne con dissolvenza i LED di tutti i dispositivi OpenRGB quando lo schermo va in standby e li ripristina alla riaccensione.
+            - **Novita' 1.0.1:** opzione per spegnere i LED anche allo spegnimento/riavvio del computer; la scheda si aggiorna da sola quando OpenRGB rifà la scansione dei dispositivi.
             - Scheda "Schermo" in OpenRGB: dissolvenza o di colpo, durata, dispositivi, pulsante Prova.
             - Desktop: KDE Plasma Wayland (provato), sway/Hyprland (wlroots), GNOME, X11 (i3, XFCE...) (non provati).
             - **Solo Linux** (x86_64): non esistono versioni per Windows o macOS.

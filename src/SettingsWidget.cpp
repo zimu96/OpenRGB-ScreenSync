@@ -10,6 +10,7 @@
 #include <QVBoxLayout>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QTimer>
 
 SettingsWidget::SettingsWidget(OpenRGBPluginAPIInterface* a, FadeEngine* e, QWidget* parent) :
     QWidget(parent), api(a), engine(e)
@@ -18,6 +19,9 @@ SettingsWidget::SettingsWidget(OpenRGBPluginAPIInterface* a, FadeEngine* e, QWid
 
     chkEnabled = new QCheckBox("Spegni i LED quando lo schermo va in standby");
     root->addWidget(chkEnabled);
+
+    chkShutdown = new QCheckBox("Spegni subito i LED quando spengo il PC (non vale per il riavvio)");
+    root->addWidget(chkShutdown);
 
     QGroupBox* gb = new QGroupBox("Come si spengono e si accendono i LED");
     QFormLayout* fl = new QFormLayout(gb);
@@ -39,7 +43,10 @@ SettingsWidget::SettingsWidget(OpenRGBPluginAPIInterface* a, FadeEngine* e, QWid
     rbSel = new QRadioButton("Solo quelli selezionati qui sotto:");
     list  = new QListWidget;
     QPushButton* btnRef = new QPushButton("Aggiorna elenco");
-    vd->addWidget(rbAll); vd->addWidget(rbSel); vd->addWidget(list); vd->addWidget(btnRef, 0, Qt::AlignLeft);
+    btnRescan = new QPushButton("Riscansiona dispositivi (cerca quelli nuovi)");
+    vd->addWidget(rbAll); vd->addWidget(rbSel); vd->addWidget(list);
+    QHBoxLayout* hr = new QHBoxLayout; hr->addWidget(btnRef); hr->addWidget(btnRescan); hr->addStretch();
+    vd->addLayout(hr);
     root->addWidget(gd, 1);
 
     QHBoxLayout* hb = new QHBoxLayout;
@@ -51,6 +58,7 @@ SettingsWidget::SettingsWidget(OpenRGBPluginAPIInterface* a, FadeEngine* e, QWid
     // valori iniziali
     const ScreenSyncSettings& s = engine->settings();
     chkEnabled->setChecked(s.enabled);
+    chkShutdown->setChecked(s.offOnShutdown);
     cmbOut->setCurrentIndex(s.fadeOutMs > 0 ? 0 : 1); spnOut->setValue(s.fadeOutMs > 0 ? s.fadeOutMs / 1000.0 : 2.0);
     cmbIn->setCurrentIndex(s.fadeInMs > 0 ? 0 : 1);   spnIn->setValue(s.fadeInMs > 0 ? s.fadeInMs / 1000.0 : 1.0);
     rbAll->setChecked(s.allDevices); rbSel->setChecked(!s.allDevices);
@@ -60,6 +68,7 @@ SettingsWidget::SettingsWidget(OpenRGBPluginAPIInterface* a, FadeEngine* e, QWid
 
     auto chg = [this]{ collect(); };
     connect(chkEnabled, &QCheckBox::toggled, this, chg);
+    connect(chkShutdown, &QCheckBox::toggled, this, chg);
     connect(cmbOut, &QComboBox::currentIndexChanged, this, chg);
     connect(cmbIn,  &QComboBox::currentIndexChanged, this, chg);
     connect(spnOut, &QDoubleSpinBox::valueChanged, this, chg);
@@ -68,6 +77,17 @@ SettingsWidget::SettingsWidget(OpenRGBPluginAPIInterface* a, FadeEngine* e, QWid
     connect(list,   &QListWidget::itemChanged, this, chg);
     connect(btnRef, &QPushButton::clicked, this, [this]{ loading = true; refreshDevices(); loading = false; });
     connect(btnTest, &QPushButton::clicked, engine, &FadeEngine::testCycle);
+    connect(btnRescan, &QPushButton::clicked, this, [this]{
+        lblStatus->setText("Stato: riscansione in corso...");
+        QTimer::singleShot(50, this, [this]{ this->api->RescanDevices(); });
+    });
+}
+
+void SettingsWidget::refreshDevicesAuto()
+{
+    // elenco aggiornato da solo quando OpenRGB trova o perde dispositivi
+    bool was = loading;
+    loading = true; refreshDevices(); loading = was;
 }
 
 void SettingsWidget::setStatus(const QString& s) { lblStatus->setText("Stato: " + s); }
@@ -101,6 +121,7 @@ void SettingsWidget::collect()
     syncEnabledState();
     ScreenSyncSettings s;
     s.enabled    = chkEnabled->isChecked();
+    s.offOnShutdown = chkShutdown->isChecked();
     s.fadeOutMs  = cmbOut->currentIndex() == 0 ? (int)(spnOut->value() * 1000) : 0;
     s.fadeInMs   = cmbIn->currentIndex()  == 0 ? (int)(spnIn->value()  * 1000) : 0;
     s.allDevices = rbAll->isChecked();
