@@ -15,6 +15,10 @@ struct ScreenSyncSettings
     bool        offOnShutdown = false;   // spegni subito i LED quando il PC si spegne (non al riavvio)
     bool        allDevices = true;
     QStringList selected;           // chiavi "nome|posizione"
+    bool        keepOnAudio = false;     // con lo schermo spento, tieni accesi i LED finche' c'e' audio
+    bool        keepAll = true;          // ...tutti i dispositivi scelti sopra
+    int         keepHoldMs = 8000;      // attesa dopo la fine dell'audio prima di spegnere
+    QStringList keepSelected;           // ...oppure solo questi (chiavi "nome|posizione")
 };
 
 class FadeEngine : public QObject
@@ -32,6 +36,7 @@ public slots:
     void restoreNow();       // ripristina subito tutto (chiusura plugin)
     void shutdownOff();      // il PC si spegne: LED spenti di colpo e niente ripristino
     void cancelShutdown();   // spegnimento annullato: ripristina
+    void setAudioActive(bool on);   // c'e' audio in uscita dal PC
 
 private:
     struct Dev
@@ -45,12 +50,19 @@ private:
         bool switched;
         qint64 lastMs;       // ultimo invio (per limitare la frequenza)
         int  minGapMs;       // intervallo minimo tra due invii
+        bool keep;           // resta acceso se c'e' audio
+        double lvl;          // luminosita' attuale (0..1)
+        double tgt;          // luminosita' da raggiungere
+        bool offDone;        // spegnimento completato
     };
+    bool  isKeep(RGBControllerInterface* c) const;
+    void  updateTargets();
+    void  applyDev(Dev& d, double lv);
+    void  finalizeDev(Dev& d);
     bool  isSelected(RGBControllerInterface* c) const;
     void  takeSnapshot();
     void  tick();
     void  apply(double level);
-    void  finalizeOff();
     void  restoreExact();
     void  writeOriginal(Dev& d);
     bool  stillExists(RGBControllerInterface* c) const;
@@ -59,11 +71,10 @@ private:
     ScreenSyncSettings cfg;
     std::vector<Dev>   devs;
     bool               snap = false;
-    double             level = 1.0;
-    double             target = 1.0;
     QTimer             timer;
     QElapsedTimer      clock;
-    bool               offApplied = false;
+    bool               screenOn = true;
+    bool               audio = false;
     bool               shuttingDown = false;
     QElapsedTimer      total;
 };

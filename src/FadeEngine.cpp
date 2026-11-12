@@ -19,7 +19,17 @@ QString FadeEngine::deviceKey(RGBControllerInterface* c)
 void FadeEngine::setSettings(const ScreenSyncSettings& s)
 {
     cfg = s;
-    if(!cfg.enabled && (snap || timer.isActive())) restoreNow();
+    if(!cfg.enabled && (snap || timer.isActive())) { restoreNow(); return; }
+    if(snap)
+    {
+        for(Dev& d : devs) d.keep = isKeep(d.c);
+        updateTargets();
+    }
+}
+
+bool FadeEngine::isKeep(RGBControllerInterface* c) const
+{
+    return cfg.keepOnAudio && (cfg.keepAll || cfg.keepSelected.contains(deviceKey(c)));
 }
 
 bool FadeEngine::isSelected(RGBControllerInterface* c) const
@@ -36,11 +46,32 @@ bool FadeEngine::stillExists(RGBControllerInterface* c) const
 void FadeEngine::setScreenOn(bool on)
 {
     SLOG("[ScreenSync] evento schermo: %s (plugin %s)", on ? "ACCESO" : "SPENTO", cfg.enabled ? "attivo" : "disattivato");
+    screenOn = on;
     if(!cfg.enabled || shuttingDown) return;
     if(!on && !snap) takeSnapshot();
     if(!snap) return;                       // schermo acceso e niente da ripristinare
-    target = on ? 1.0 : 0.0;
-    if(!timer.isActive()) { clock.start(); timer.start(); }
+    updateTargets();
+}
+
+void FadeEngine::setAudioActive(bool on)
+{
+    SLOG("[ScreenSync] audio: %s", on ? "in riproduzione" : "silenzio");
+    audio = on;
+    if(!cfg.enabled || shuttingDown || !snap) return;
+    updateTargets();
+}
+
+// Ogni dispositivo ha la sua meta': con lo schermo acceso tutti al massimo; con lo schermo spento
+// restano accesi solo quelli "da tenere" e solo finche' c'e' audio.
+void FadeEngine::updateTargets()
+{
+    bool anyChange = false;
+    for(Dev& d : devs)
+    {
+        double t = (screenOn || (audio && d.keep)) ? 1.0 : 0.0;
+        if(t != d.tgt) { d.tgt = t; anyChange = true; if(t > 0.0) d.offDone = false; }
+    }
+    if(anyChange || !timer.isActive()) { clock.start(); if(!timer.isActive()) timer.start(); }
 }
 
 void FadeEngine::testCycle()
@@ -93,81 +124,94 @@ void FadeEngine::takeSnapshot()
             }
         }
         d.switched = false;
+        d.keep = isKeep(c);
+        d.lvl = 1.0; d.tgt = 1.0; d.offDone = false;
         d.lastMs = -100000;
         d.minGapMs = (n > 50) ? 125 : 40;   // tastiere con molti LED: ~8 invii/s
         SLOG("[ScreenSync] snapshot %s: modo=%d (%s) tipo=%d offMode=%d luci=%u bright=%u/min=%u", c->GetName().c_str(), d.origMode, c->GetModeName(d.origMode).c_str(), d.kind, d.offMode, n, d.origBright, d.minBright);
         devs.push_back(d);
     }
     snap = !devs.empty();
-    level = 1.0;
-    offApplied = false;
 }
 
 void FadeEngine::tick()
 {
     double dt = clock.restart();
-    double dur = (target < level) ? cfg.fadeOutMs : cfg.fadeInMs;
-    double step = (dur <= 0) ? 1.0 : dt / dur;
-    if(target < level) level = std::max(target, level - step);
-    else               level = std::min(target, level + step);
-
-    apply(level);
-
-    if(level <= 0.0 && target <= 0.0) { timer.stop(); finalizeOff(); }
-    else if(level >= 1.0 && target >= 1.0) { timer.stop(); restoreExact(); }
+    bool allSettled = true, allOn = true;
+    for(Dev& d : devs)
+    {
+        if(d.lvl != d.tgt)
+        {
+            double dur = (d.tgt < d.lvl) ? cfg.fadeOutMs : cfg.fadeInMs;
+            double step = (dur <= 0) ? 1.0 : dt / dur;
+            if(d.tgt < d.lvl) d.lvl = std::max(d.tgt, d.lvl - step);
+            else              d.lvl = std::min(d.tgt, d.lvl + step);
+            applyDev(d, d.lvl);
+        }
+        if(d.lvl <= 0.0 && d.tgt <= 0.0 && !d.offDone) finalizeDev(d);
+        if(d.lvl != d.tgt) allSettled = false;
+        if(d.lvl < 1.0) allOn = false;
+    }
+    if(!allSettled) return;
+    timer.stop();
+    if(allOn) restoreExact();
 }
 
 void FadeEngine::apply(double lv)
 {
-    for(Dev& d : devs)
-    {
-        if(!stillExists(d.c)) continue;
-        bool endpoint = (lv <= 0.0 || lv >= 1.0);
-        if(!endpoint && total.elapsed() - d.lastMs < d.minGapMs) continue;
-        d.lastMs = total.elapsed();
+    for(Dev& d : devs) applyDev(d, lv);
+}
 
-        // all'inizio della risalita, tornare al modo originale
-        if(lv > 0.0 && d.switched)
+void FadeEngine::applyDev(Dev& d, double lv)
+{
+    if(!stillExists(d.c)) return;
+    bool endpoint = (lv <= 0.0 || lv >= 1.0);
+    if(!endpoint && total.elapsed() - d.lastMs < d.minGapMs) return;
+    d.lastMs = total.elapsed();
+
+    // all'inizio della risalita, tornare al modo originale
+    if(lv > 0.0 && d.switched)
+    {
+        d.c->SetActiveMode(d.origMode);
+        d.switched = false;
+    }
+    if(d.kind == 0)
+    {
+        for(unsigned i = 0; i < d.colors.size(); i++)
         {
-            d.c->SetActiveMode(d.origMode);
-            d.switched = false;
+            RGBColor o = d.colors[i];
+            d.c->SetColor(i, ToRGBColor((unsigned)std::lround(RGBGetRValue(o) * lv),
+                                        (unsigned)std::lround(RGBGetGValue(o) * lv),
+                                        (unsigned)std::lround(RGBGetBValue(o) * lv)));
         }
-        if(d.kind == 0)
-        {
-            for(unsigned i = 0; i < d.colors.size(); i++)
-            {
-                RGBColor o = d.colors[i];
-                d.c->SetColor(i, ToRGBColor((unsigned)std::lround(RGBGetRValue(o) * lv),
-                                            (unsigned)std::lround(RGBGetGValue(o) * lv),
-                                            (unsigned)std::lround(RGBGetBValue(o) * lv)));
-            }
-            d.c->UpdateLEDs();
-        }
-        else if(d.kind == 1 && !d.switched)
-        {
-            unsigned b = d.minBright + (unsigned)std::lround((double)(d.origBright - d.minBright) * lv);
-            d.c->SetModeBrightness(d.origMode, b);
-            d.c->UpdateMode();
-        }
+        d.c->UpdateLEDs();
+    }
+    else if(d.kind == 1 && !d.switched)
+    {
+        unsigned b = d.minBright + (unsigned)std::lround((double)(d.origBright - d.minBright) * lv);
+        d.c->SetModeBrightness(d.origMode, b);
+        d.c->UpdateMode();
     }
 }
 
-void FadeEngine::finalizeOff()
+void FadeEngine::finalizeDev(Dev& d)
 {
-    SLOG("[ScreenSync] finalizeOff");
-    QTimer::singleShot(500, this, [this]{ if(snap && level <= 0.0 && !timer.isActive()) { apply(0.0); } });
-    offApplied = true;
-    for(Dev& d : devs)
+    SLOG("[ScreenSync] finalizeOff %s", d.c->GetName().c_str());
+    d.offDone = true;
+    // secondo invio dopo mezzo secondo: alcune tastiere perdono il comando finale
+    RGBControllerInterface* ctl = d.c;
+    QTimer::singleShot(500, this, [this, ctl]{
+        for(Dev& x : devs)
+            if(x.c == ctl && snap && x.lvl <= 0.0 && x.tgt <= 0.0) { applyDev(x, 0.0); break; }
+    });
+    if(!stillExists(d.c)) return;
+    bool needSwitch = (d.kind == 2) || (d.kind == 1 && d.minBright > 0);
+    if(needSwitch && d.offMode >= 0 && d.offMode != d.origMode)
     {
-        if(!stillExists(d.c)) continue;
-        bool needSwitch = (d.kind == 2) || (d.kind == 1 && d.minBright > 0);
-        if(needSwitch && d.offMode >= 0 && d.offMode != d.origMode)
-        {
-            d.c->SetActiveMode(d.offMode);
-            d.c->SetAllColors(0);
-            d.c->UpdateLEDs();
-            d.switched = true;
-        }
+        d.c->SetActiveMode(d.offMode);
+        d.c->SetAllColors(0);
+        d.c->UpdateLEDs();
+        d.switched = true;
     }
 }
 
@@ -194,20 +238,19 @@ void FadeEngine::restoreExact()
     // secondo invio dopo mezzo secondo: alcune tastiere perdono il comando finale
     std::vector<Dev> copy = devs;
     QTimer::singleShot(500, this, [this, copy]() mutable {
-        if(snap || level < 1.0) return;     // nel frattempo e' ripartita una sfumatura
+        if(snap) return;                    // nel frattempo e' ripartita una sfumatura
         for(Dev& d : copy) writeOriginal(d);
         SLOG("[ScreenSync] restoreExact (secondo invio)");
     });
     devs.clear();
     snap = false;
-    level = target = 1.0;
 }
 
 void FadeEngine::restoreNow()
 {
     if(shuttingDown) return;        // durante lo spegnimento del PC i LED devono restare spenti
     timer.stop();
-    if(snap) { level = 1.0; target = 1.0; restoreExact(); }
+    if(snap) restoreExact();
 }
 
 void FadeEngine::shutdownOff()
@@ -218,10 +261,9 @@ void FadeEngine::shutdownOff()
     timer.stop();
     if(!snap) takeSnapshot();
     if(!snap) return;
-    level = target = 0.0;
-    for(Dev& d : devs) d.lastMs = -100000;
+    for(Dev& d : devs) { d.lvl = d.tgt = 0.0; d.lastMs = -100000; }
     apply(0.0);
-    finalizeOff();
+    for(Dev& d : devs) finalizeDev(d);
     // secondo invio: se un comando si perde, i LED si spengono lo stesso
     QTimer::singleShot(250, this, [this]{ if(snap) { for(Dev& d : devs) d.lastMs = -100000; apply(0.0); } });
 }
@@ -230,5 +272,5 @@ void FadeEngine::cancelShutdown()
 {
     if(!shuttingDown) return;
     shuttingDown = false;
-    if(snap) { timer.stop(); level = 1.0; target = 1.0; restoreExact(); }
+    if(snap) { timer.stop(); restoreExact(); }
 }

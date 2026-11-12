@@ -2,6 +2,7 @@
 #include "DpmsWatcher.h"
 #include "SettingsWidget.h"
 #include "ShutdownWatcher.h"
+#include "AudioWatcher.h"
 #include <QMetaObject>
 
 static const char* KEY = "ScreenSyncPlugin";
@@ -41,6 +42,11 @@ void ScreenSyncPlugin::Load(OpenRGBPluginAPIInterface* a)
     connect(shutdown, &ShutdownWatcher::powerOff, engine, &FadeEngine::shutdownOff);
     connect(shutdown, &ShutdownWatcher::cancelled, engine, &FadeEngine::cancelShutdown);
     shutdown->setEnabled(engine->settings().offOnShutdown);
+
+    audioW = new AudioWatcher(this);
+    connect(audioW, &AudioWatcher::audioChanged, engine, &FadeEngine::setAudioActive);
+    audioW->setHoldMs(engine->settings().keepHoldMs);
+    audioW->setEnabled(engine->settings().enabled && engine->settings().keepOnAudio);
 }
 
 // OpenRGB ha cambiato l'elenco dei dispositivi (nuovo dispositivo, riscansione...): aggiorna la scheda
@@ -56,6 +62,7 @@ QWidget* ScreenSyncPlugin::GetWidget()
     connect(widget, &SettingsWidget::settingsChanged, this, [this](const ScreenSyncSettings& s){
         engine->setSettings(s);
         if(shutdown) shutdown->setEnabled(s.offOnShutdown);
+        if(audioW) { audioW->setHoldMs(s.keepHoldMs); audioW->setEnabled(s.enabled && s.keepOnAudio); }
         saveSettings(s);
     });
     return widget;
@@ -63,6 +70,7 @@ QWidget* ScreenSyncPlugin::GetWidget()
 
 void ScreenSyncPlugin::Unload()
 {
+    if(audioW) audioW->setEnabled(false);
     if(watcher) { watcher->stop(); }
     if(engine)  { engine->restoreNow(); }
     widget.clear();
@@ -79,6 +87,11 @@ void ScreenSyncPlugin::loadSettings()
         s.fadeInMs   = j.value("fade_in_ms", s.fadeInMs);
         s.allDevices = j.value("all_devices", s.allDevices);
         s.offOnShutdown = j.value("off_on_shutdown", s.offOnShutdown);
+        s.keepOnAudio = j.value("keep_on_audio", s.keepOnAudio);
+        s.keepAll     = j.value("keep_all", s.keepAll);
+        s.keepHoldMs  = j.value("keep_hold_ms", s.keepHoldMs);
+        if(j.contains("keep_selected") && j["keep_selected"].is_array())
+            for(auto& k : j["keep_selected"]) s.keepSelected << QString::fromStdString(k.get<std::string>());
         if(j.contains("selected") && j["selected"].is_array())
             for(auto& k : j["selected"]) s.selected << QString::fromStdString(k.get<std::string>());
     }
@@ -91,6 +104,9 @@ void ScreenSyncPlugin::saveSettings(const ScreenSyncSettings& s)
     j["enabled"] = s.enabled; j["fade_out_ms"] = s.fadeOutMs; j["fade_in_ms"] = s.fadeInMs;
     j["all_devices"] = s.allDevices;
     j["off_on_shutdown"] = s.offOnShutdown;
+    j["keep_on_audio"] = s.keepOnAudio; j["keep_all"] = s.keepAll; j["keep_hold_ms"] = s.keepHoldMs;
+    j["keep_selected"] = nlohmann::json::array();
+    for(const QString& k : s.keepSelected) j["keep_selected"].push_back(k.toStdString());
     j["selected"] = nlohmann::json::array();
     for(const QString& k : s.selected) j["selected"].push_back(k.toStdString());
     api->SetSettings(KEY, j);

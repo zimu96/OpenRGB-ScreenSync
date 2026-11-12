@@ -23,7 +23,7 @@ foreach(P dpms wlr-output-power)
 endforeach()
 
 add_library(ScreenSyncPlugin MODULE
-    src/ScreenSyncPlugin.cpp src/DpmsWatcher.cpp src/FadeEngine.cpp src/SettingsWidget.cpp src/ShutdownWatcher.cpp
+    src/ScreenSyncPlugin.cpp src/DpmsWatcher.cpp src/FadeEngine.cpp src/SettingsWidget.cpp src/ShutdownWatcher.cpp src/AudioWatcher.cpp
     ${GEN}/dpms-protocol.c ${GEN}/wlr-output-power-protocol.c)
 target_include_directories(ScreenSyncPlugin PRIVATE src sdk ${GEN} ${WAYLAND_CLIENT_INCLUDE_DIRS})
 target_link_libraries(ScreenSyncPlugin PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::DBus ${WAYLAND_CLIENT_LIBRARIES})

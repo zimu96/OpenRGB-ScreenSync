@@ -2,7 +2,7 @@
 #include <QWidget>
 #include "FadeEngine.h"
 
-class QCheckBox; class QComboBox; class QDoubleSpinBox; class QRadioButton; class QListWidget; class QLabel; class QPushButton;
+class QCheckBox; class QComboBox; class QDoubleSpinBox; class QRadioButton; class QListWidget; class QLabel; class QPushButton; class QSpinBox;
 
 class SettingsWidget : public QWidget
 {
@@ -23,6 +23,10 @@ private:
     bool            loading = true;
     QCheckBox*      chkEnabled;
     QCheckBox*      chkShutdown;
+    QCheckBox*      chkAudio;
+    QRadioButton   *rbAudAll, *rbAudSel;
+    QListWidget*    listAudio;
+    QSpinBox*       spnHold;
     QPushButton*    btnRescan;
     QComboBox       *cmbOut, *cmbIn;
     QDoubleSpinBox  *spnOut, *spnIn;

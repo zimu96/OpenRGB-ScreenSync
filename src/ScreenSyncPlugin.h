@@ -4,7 +4,7 @@
 #include "FadeEngine.h"
 
 #include <QPointer>
-class DpmsWatcher; class SettingsWidget; class ShutdownWatcher;
+class DpmsWatcher; class SettingsWidget; class ShutdownWatcher; class AudioWatcher;
 
 class ScreenSyncPlugin : public QObject, public OpenRGBPluginInterface
 {
@@ -37,6 +37,7 @@ private:
     FadeEngine*                engine = nullptr;
     DpmsWatcher*               watcher = nullptr;
     ShutdownWatcher*           shutdown = nullptr;
+    AudioWatcher*              audioW = nullptr;
     QPointer<SettingsWidget>   widget;
     QString                    lastStatus = "in avvio";
 };
