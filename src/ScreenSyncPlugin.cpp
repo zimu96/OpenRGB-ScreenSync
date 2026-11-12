@@ -45,6 +45,7 @@ void ScreenSyncPlugin::Load(OpenRGBPluginAPIInterface* a)
 
     audioW = new AudioWatcher(this);
     connect(audioW, &AudioWatcher::audioChanged, engine, &FadeEngine::setAudioActive);
+    connect(watcher, &DpmsWatcher::screensChanged, audioW, &AudioWatcher::setScreenOn);
     audioW->setHoldMs(engine->settings().keepHoldMs);
     audioW->setEnabled(engine->settings().enabled && engine->settings().keepOnAudio);
 }

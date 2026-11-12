@@ -37,16 +37,24 @@ AudioWatcher::AudioWatcher(QObject* parent) : QObject(parent)
     connect(&timer, &QTimer::timeout, this, &AudioWatcher::poll);
 }
 
-void AudioWatcher::setEnabled(bool on)
+void AudioWatcher::setEnabled(bool on) { wanted = on; apply(); }
+void AudioWatcher::setScreenOn(bool on) { screenOn = on; apply(); }
+
+// Il controllo apre per un istante un flusso di registrazione sull'uscita audio (parec): Plasma lo
+// mostra come icona del microfono. Per non farla lampeggiare mentre si lavora, gira solo con lo
+// schermo spento, quando nessuno guarda e i LED devono decidere se restare accesi.
+void AudioWatcher::apply()
 {
-    if(on) { if(!timer.isActive()) { timer.start(); poll(); } }
+    if(wanted && !screenOn) { if(!timer.isActive()) { timer.start(); poll(); } }
     else
     {
         timer.stop();
         if(proc) { proc->disconnect(this); proc->kill(); proc->deleteLater(); proc = nullptr; }
         busy = false;
         seen = false;
-        if(playing) { playing = false; emit audioChanged(false); }
+        if(!wanted && playing) { playing = false; emit audioChanged(false); }
+        // con lo schermo acceso lo stato resta com'e': conta solo a schermo spento e il primo
+        // controllo dopo lo spegnimento lo aggiorna subito
     }
 }
 
