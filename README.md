@@ -23,7 +23,7 @@ Non l'ho trovato già fatto: esistono solo script esterni che richiamano `openrg
 - **Spegnimento schermo** -> i LED sfumano fino a spegnersi (oppure di colpo).
 - **Accensione schermo** -> i LED tornano esattamente com'erano (colori, modo, luminosita') con dissolvenza o di colpo.
 - Se lo schermo si riaccende a metà dissolvenza, la sfumatura inverte da dove e' arrivata.
-- Spegnimento/accensione del **PC** (sospensione, shutdown) NON sono gestiti: conta solo lo schermo.
+- Opzione "Spegni subito i LED quando spengo il PC": vale solo per lo **spegnimento** del computer, non per il riavvio né per la sospensione.
 - Se un monitor e' acceso, i LED restano accesi: si spengono quando **tutti** i monitor sono in standby.
 
 ## Scheda "Schermo" in OpenRGB
