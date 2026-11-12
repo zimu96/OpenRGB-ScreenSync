@@ -41,7 +41,7 @@ Caso d'uso: lo schermo va in standby, ma sei ancora in stanza (divano, musica, f
 Come rileva l'audio (valido su qualunque distro):
 - Con **PipeWire o PulseAudio** (quasi tutte le distro attuali) usa `pactl`: legge stato, volume e muto di ogni uscita. Copre anche il Bluetooth.
 - Senza `pactl` legge lo stato di ALSA dal kernel (`/proc/asound`): nessun programma richiesto. In questo caso il volume a zero non e' verificabile e il Bluetooth non e' visibile.
-- Limite: se un'app tiene aperto un flusso audio silenzioso (es. un video in pausa che non rilascia l'audio), i LED possono restare accesi.
+- Conta il **suono vero**, non l'esistenza di un flusso: se l'app e' in pausa o manda solo silenzio (un video YouTube in pausa con la scheda aperta, un lettore fermo) i LED si spengono, perche' dalle casse non esce niente. Con `parec` (incluso in PipeWire/PulseAudio) il plugin ascolta per mezzo secondo l'uscita e verifica che ci sia segnale. Conta la *presenza* del suono, non il volume: musica anche piano vale, un segnale cosi' piccolo da essere solo rumore di fondo no.\n- Senza `parec` o col solo ALSA non si distingue la pausa dal suono: conta solo che l'uscita sia attiva.
 
 ## Scheda "Schermo" in OpenRGB
 - Casella per attivare/disattivare tutto.

@@ -20,10 +20,12 @@ signals:
 private:
     void poll();
     void result(bool running);
+    void probe(QStringList mons, int idx);
     QTimer        timer;
     QProcess*     proc = nullptr;
     QElapsedTimer lastRunning;
     bool          seen = false;
+    bool          busy = false;
     bool          playing = false;
     int           holdMs = 8000;
 };
